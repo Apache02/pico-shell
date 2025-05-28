@@ -27,7 +27,9 @@ target_link_libraries(
         tinyusb_device
         FreeRTOS-Kernel
         FreeRTOS-Kernel-Heap4
-        shell
+        shell_main
+        shell_commands_common
+        shell_commands_pico
         commands
 )
 

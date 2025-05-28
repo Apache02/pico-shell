@@ -1,4 +1,4 @@
-#include "commands.h"
+#include "shell/commands_pico.h"
 
 #include <stdio.h>
 #include "hardware/i2c.h"

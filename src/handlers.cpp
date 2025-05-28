@@ -1,3 +1,5 @@
+#include "shell/commands_common.h"
+#include "shell/commands_pico.h"
 #include "commands/commands.h"
 #include <stdio.h>
 
@@ -7,12 +9,14 @@ static void help(Console &console);
 extern const Console::Handler handlers[] = {
         {"help",       help},
         {"echo",       command_echo},
-        {"board_help", command_board_help},
+        {"dump",       command_dump},
+        {"dump32",     command_dump32},
         {"sensors",    command_sensors},
-        {"chip_id",    command_chip_id},
         {"clocks",     command_clocks},
-        {"bench",      command_benchmark},
         {"i2c_scan",   command_i2c_scan},
+        {"board_help", command_board_help},
+        {"chip_id",    command_chip_id},
+        {"bench",      command_benchmark},
         // required at the end
         {nullptr,      nullptr},
 };

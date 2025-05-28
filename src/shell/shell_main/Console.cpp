@@ -203,7 +203,7 @@ void Console::handle_control_sequence(const char *control) {
 void Console::replace_command(const char *command) {
     size_t length = strlen(packet.buf);
     putchar('\r');
-    for (auto i = 0; i < length + 4; i++) {
+    for (size_t i = 0; i < length + 4; i++) {
         putchar(' ');
     }
     putchar('\r');
@@ -217,8 +217,8 @@ void Console::replace_command(const char *command) {
     }
 }
 
-static int prefix_match(const char *s1, const char *s2) {
-    int i = 0;
+static unsigned int prefix_match(const char *s1, const char *s2) {
+    size_t i = 0;
     while (*s1 != '\0' && *s2 != '\0' && *s1 == *s2) {
         s1++;
         s2++;
@@ -235,11 +235,11 @@ void Console::autocomplete() {
 
     const char *candidates[16] = {NULL};
 
-    int found_count = 0;
+    size_t found_count = 0;
     for (int i = 0;; i++) {
         if (!handlers[i].name || !handlers[i].handler) break;
 
-        int match_count = prefix_match(packet.buf, handlers[i].name);
+        size_t match_count = prefix_match(packet.buf, handlers[i].name);
         if (match_count < length) {
             continue;
         }
@@ -256,7 +256,7 @@ void Console::autocomplete() {
     if (found_count > 1) {
         // print candidates
         putchar('\r');
-        for (int i = 0; i < found_count && i < count_of(candidates); i++) {
+        for (size_t i = 0; i < found_count && i < count_of(candidates); i++) {
             if (i > 0 && (i & 0b11) == 0b11) {
                 this->print_eol();
                 print_eol();
@@ -268,7 +268,7 @@ void Console::autocomplete() {
         // find how many common symbols
         int common_count = 0;
         for (;;common_count++) {
-            for (int i=1; i<found_count; i++) {
+            for (size_t i=1; i<found_count; i++) {
                 if (candidates[0][common_count] != candidates[i][common_count]) {
                     goto break_2;
                 }

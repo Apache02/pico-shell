@@ -1,4 +1,4 @@
-#include "commands.h"
+#include "shell/commands_pico.h"
 
 #include <stdio.h>
 
@@ -35,8 +35,10 @@ static void sprint_human_hz(char *buf, uint32_t hz) {
 void command_clocks(Console &c) {
     char freq_human[32];
 
+#ifdef configCPU_CLOCK_HZ
     sprint_human_hz(freq_human, configCPU_CLOCK_HZ);
     printf("%12s | %s\n", freq_human, "FreeRTOS configCPU_CLOCK_HZ");
+#endif
 
     for (auto item: clocks) {
         uint32_t clock_hz = clock_get_hz(item.index);
