@@ -1,4 +1,5 @@
 #include "shell/commands_pico.h"
+#include "shell/Parser.h"
 
 #include <stdio.h>
 #include "hardware/i2c.h"
@@ -15,15 +16,16 @@ static void usage(const char *command) {
     printf("\n    Usage: %s <pin1: 0-21> <pin2: 0-21> [baudrate: default %d]\n\n", command, DEFAULT_BAUDRATE);
 }
 
-void command_i2c_scan(Console &c) {
-    auto pin1_r = c.packet.take_int();
-    auto pin2_r = c.packet.take_int();
-    auto baudrate = c.packet.take_int().ok_or(DEFAULT_BAUDRATE);
+
+int command_i2c_scan(int argc, const char *argv[]) {
+    auto pin1_r = take_int(argv[1]);
+    auto pin2_r = take_int(argv[2]);
+    auto baudrate = take_int(argv[3]).ok_or(DEFAULT_BAUDRATE);
 
     if (pin1_r.is_err() || pin2_r.is_err()) {
         printf("Error: incorrect pins\n");
-        usage(c.packet.buf);
-        return;
+        usage(argv[0]);
+        return 1;
     }
 
     auto pin1 = (int) pin1_r;
@@ -31,17 +33,17 @@ void command_i2c_scan(Console &c) {
 
     if (pin1 > 21 || pin2 > 21 || pin1 < 0 || pin2 < 0) {
         printf("Error: pins must be in range [0-21]\n");
-        return;
+        return 1;
     }
 
     if (pin1 == pin2) {
         printf("Error: pins can't be equal\n");
-        return;
+        return 1;
     }
 
     if ((pin1 & 2) != (pin2 & 2)) {
         printf("Error: pins must have same i2c instance\n");
-        return;
+        return 1;
     }
 
     gpio_init(pin1);
@@ -84,4 +86,6 @@ void command_i2c_scan(Console &c) {
     gpio_init(pin2);
     gpio_disable_pulls(pin1);
     gpio_disable_pulls(pin2);
+
+    return 0;
 }

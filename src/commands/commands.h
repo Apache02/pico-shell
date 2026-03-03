@@ -1,11 +1,8 @@
 #pragma once
 
-#include "shell/Console.h"
 
+int command_board_help(int, const char *[]);
 
-void command_board_help(Console &c);
+int command_benchmark(int, const char *[]);
 
-void command_benchmark(Console &c);
-
-void command_chip_id(Console &c);
-
+int command_chip_id(int, const char *[]);

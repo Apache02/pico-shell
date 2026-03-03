@@ -25,7 +25,7 @@ static void __attribute__((constructor)) _read_flash_JEDEC_ID_on_boot() {
     flash_JEDEC_ID.capacity = rxbuf[3];
 }
 
-void command_chip_id(Console &c) {
+int command_chip_id(int, const char *[]) {
     uint32_t chip_id = sysinfo_hw->chip_id;
     uint16_t manufacturer = (chip_id >> 0) & 0x0fff;
     uint16_t part_id = (chip_id >> 12) & 0xffff;
@@ -42,4 +42,6 @@ void command_chip_id(Console &c) {
     printf("Flash Manufacturer: 0x%02X\n", flash_JEDEC_ID.manufacturer);
     printf("Flash Memory Type: 0x%02X\n", flash_JEDEC_ID.memory_type);
     printf("Flash Capacity: 0x%02X (%d MB)\n", flash_JEDEC_ID.capacity, (1 << flash_JEDEC_ID.capacity) / (1 << 20));
+
+    return 0;
 }

@@ -1,7 +1,7 @@
 #include "shell/Console.h"
 #include "shell/console_colors.h"
-//#include "pico/time.h"
 #include <stdio.h>
+#include <string.h>
 
 
 #undef count_of
@@ -19,42 +19,70 @@
 #define CONTROL_PAGE_DOWN       "\x1B[6~"
 #define CONTROL_DELETE          "\x1B[3~"
 
+static void print_eol() {
+    printf("\r\n");
+}
 
 Console::Console(const Handler *handlers) : handlers(handlers) {
     history = new History(8);
-    control_pos = 0;
+    control_sequence.position = 0;
+    control_sequence.buffer[0] = 0;
 }
 
 Console::~Console() {
     if (history) {
         delete history;
-        history = NULL;
+        history = nullptr;
     }
 }
 
-void Console::reset() {}
+void Console::reset() {
+}
 
 void Console::start() {
     printf("%s ", ">");
 }
 
-void Console::print_eol() {
-    printf("\r\n");
-}
+int Console::handle_input() {
+    static const char *argv[32];
+    int argc = 0;
 
-bool Console::dispatch_command() {
+    char *ptr = input.buffer;
+    char *end = input.buffer + input.size;
+
+    while (ptr < end && argc < count_of(argv) - 1) {
+        while (ptr < end && *ptr == ' ') ptr++;
+        if (ptr >= end) break;
+
+        if (*ptr == '"') {
+            ptr++;
+            argv[argc++] = ptr;
+            while (ptr < end && *ptr != '"') ptr++;
+            *ptr++ = '\0';
+        } else {
+            argv[argc++] = ptr;
+            while (ptr < end && *ptr != ' ') ptr++;
+            *ptr++ = '\0';
+        }
+    }
+    argv[argc] = nullptr;
+
+    if (argc < 1) return static_cast<unsigned char>(-1);
+
+    const char *command = argv[0];
+
     for (int i = 0;; i++) {
         if (!handlers[i].name || !handlers[i].handler) break;
 
         const Handler *h = &handlers[i];
-        if (packet.match_word(h->name)) {
-            if (history) history->add(packet.buf);
-            h->handler(*this);
-            return true;
+        if (strcmp(command, h->name) == 0) {
+            if (history) history->add(argc, argv);
+            return h->handler(argc, argv);
         }
     }
-    printf(COLOR_RED("Command %s not handled\r\n"), packet.buf);
-    return false;
+
+    printf(COLOR_RED("Command %s not handled\r\n"), command);
+    return static_cast<unsigned char>(-2);
 }
 
 //------------------------------------------------------------------------------
@@ -68,17 +96,17 @@ void Console::update(int c) {
             autocomplete_streak++;
         }
         return;
-    } else {
-        autocomplete_streak = 0;
     }
+
+    autocomplete_streak = 0;
 
     if (c == '\r') c = '\n';
 
     if (c == '\x7F') {
         // backspace
-        if (!packet.empty()) {
+        if (input.cursor > input.buffer) {
             printf("\b \b");
-            packet.remove_left();
+            input.remove_left();
         }
 
         return;
@@ -86,88 +114,89 @@ void Console::update(int c) {
 
     if (c == '\x03' || c == '\x04') {
         // Ctrl + C | Ctrl + D
-        this->print_eol();
+        print_eol();
 
-        packet.clear();
+        input.reset();
         this->start();
 
         return;
     }
 
     if (c == '\n') {
-        packet.buf[packet.size] = 0;
-        packet.cursor = packet.buf;
+        input.end();
 
-        this->print_eol();
+        print_eol();
 
-        if (packet.buf[0] != '\0') {
-//            absolute_time_t time_before = get_absolute_time();
-            bool is_handled = dispatch_command();
-//            absolute_time_t time_after = get_absolute_time();
-
-            if (is_handled) {
-//                printf("Command took %lld us\n", absolute_time_diff_us(time_before, time_after));
-                if ((packet.cursor - packet.buf) < packet.size) {
-                    printf(COLOR_RED("Leftover text in packet - {%s}\r\n"), packet.cursor);
-                }
-            }
+        if (!input.is_empty()) {
+            int status = handle_input();
         }
 
-        packet.clear();
+        input.reset();
         this->start();
 
         return;
     }
 
     putchar(c);
-    packet.put(c);
+    input.put(c);
 }
 
-bool Console::is_control_sequence(int c) {
+int Console::ControlSequence::detect(int c) {
     if (c == '\x1B') {
         // this is the beginning of control sequence
-        control_pos = 0;
-        control_buf[control_pos++] = c;
+        position = 0;
+        buffer[position++] = c;
 
-        return true;
+        return IN_SEQUENCE;
     }
 
-    if (control_pos == 1) {
+    if (position == 1) {
         if (c == '[') {
-            control_buf[control_pos++] = c;
+            buffer[position++] = c;
         } else {
             // probably incorrect
             // ignore current sequence
-            control_pos = 0;
+            position = 0;
         }
 
-        return true;
+        return IN_SEQUENCE;
     }
 
-    if (control_pos > 1) {
-        control_buf[control_pos++] = c;
+    if (position > 1) {
+        buffer[position++] = c;
 
         if (c >= 'A' && c <= 'Z') {
             // end of control sequence
-            control_buf[control_pos] = 0;
-            control_pos = 0;
+            buffer[position] = 0;
+            position = 0;
         } else if (c == '~') {
             // end of control sequence [F1-F12]
-            control_buf[control_pos] = 0;
-            control_pos = 0;
-        } else if (control_pos >= count_of(control_buf)) {
+            buffer[position] = 0;
+            position = 0;
+        } else if (position >= count_of(buffer)) {
             // buffer overflow
-            control_pos = 0;
+            position = 0;
         }
 
-        if (control_pos == 0) {
-            handle_control_sequence(control_buf);
+        if (position == 0) {
+            return END_SEQUENCE;
         }
 
-        return true;
+        return IN_SEQUENCE;
     }
 
-    return false;
+    return NO_SEQUENCE;
+}
+
+bool Console::is_control_sequence(int c) {
+    switch (control_sequence.detect(c)) {
+        case ControlSequence::END_SEQUENCE:
+            handle_control_sequence(control_sequence.buffer);
+        case ControlSequence::IN_SEQUENCE:
+            return true;
+        default:
+            return false;
+    }
 }
 
 void Console::handle_control_sequence(const char *control) {
@@ -176,32 +205,32 @@ void Console::handle_control_sequence(const char *control) {
     } else if (strcmp(control, CONTROL_ARROW_DOWN) == 0) {
         this->replace_command(history->next());
     } else if (strcmp(control, CONTROL_ARROW_LEFT) == 0) {
-        if (packet.cursor > packet.buf) {
-            packet.cursor--;
+        if (input.cursor_left()) {
             printf(CONTROL_ARROW_LEFT);
         }
     } else if (strcmp(control, CONTROL_ARROW_RIGHT) == 0) {
-        if (*packet.cursor != '\0') {
-            packet.cursor++;
+        if (input.cursor_right()) {
             printf(CONTROL_ARROW_RIGHT);
         }
     } else if (strcmp(control, CONTROL_PAGE_UP) == 0) {
     } else if (strcmp(control, CONTROL_PAGE_DOWN) == 0) {
     } else if (strcmp(control, CONTROL_HOME) == 0 || strcmp(control, CONTROL_HOME_ALT) == 0) {
-        int length = packet.cursor - packet.buf;
+        int length = input.get_offset();
         for (int i = 0; i < length; i++) {
             printf(CONTROL_ARROW_LEFT);
         }
-        packet.cursor = packet.buf;
+        input.set_offset(0);
     } else if (strcmp(control, CONTROL_END) == 0 || strcmp(control, CONTROL_END_ALT) == 0) {
     } else if (strcmp(control, CONTROL_DELETE) == 0) {
     } else {
-        // TODO: unhandled sequence
+        putchar('\r');
+        printf("Unhandled control sequence [" COLOR_YELLOW("\\x%02X%s") "]", control[0], &control[1]);
+        print_eol();
     }
 }
 
 void Console::replace_command(const char *command) {
-    size_t length = strlen(packet.buf);
+    size_t length = strlen(input.buffer);
     putchar('\r');
     for (size_t i = 0; i < length + 4; i++) {
         putchar(' ');
@@ -211,9 +240,9 @@ void Console::replace_command(const char *command) {
 
     if (command) {
         printf("%s", command);
-        packet.set_packet(command);
+        input.set(command);
     } else {
-        packet.clear();
+        input.reset();
     }
 }
 
@@ -228,18 +257,18 @@ static unsigned int prefix_match(const char *s1, const char *s2) {
 }
 
 void Console::autocomplete() {
-    size_t length = strlen(packet.buf);
-    if (length == 0 || packet.buf[length - 1] == ' ') {
+    size_t length = strlen(input.buffer);
+    if (length == 0 || input.buffer[length - 1] == ' ') {
         return;
     }
 
-    const char *candidates[16] = {NULL};
+    const char *candidates[16] = {nullptr};
 
     size_t found_count = 0;
     for (int i = 0;; i++) {
         if (!handlers[i].name || !handlers[i].handler) break;
 
-        size_t match_count = prefix_match(packet.buf, handlers[i].name);
+        size_t match_count = prefix_match(input.buffer, handlers[i].name);
         if (match_count < length) {
             continue;
         }
@@ -258,7 +287,6 @@ void Console::autocomplete() {
         putchar('\r');
         for (size_t i = 0; i < found_count && i < count_of(candidates); i++) {
             if (i > 0 && (i & 0b11) == 0b11) {
-                this->print_eol();
                 print_eol();
             }
             printf("%-16s", candidates[i]);
@@ -267,38 +295,35 @@ void Console::autocomplete() {
 
         // find how many common symbols
         int common_count = 0;
-        for (;;common_count++) {
-            for (size_t i=1; i<found_count; i++) {
+        for (;; common_count++) {
+            for (size_t i = 1; i < found_count; i++) {
                 if (candidates[0][common_count] != candidates[i][common_count]) {
                     goto break_2;
                 }
             }
         }
-break_2:
+    break_2:
 
-        packet.clear();
-        packet.put_strn(candidates[0], common_count);
-        start();
-        printf("%s", packet.buf);
+        input.reset();
+        input.put_strn(candidates[0], common_count);
+        this->start();
+        printf("%s", input.buffer);
 
         return;
     }
 
     // found_count == 1
 
-    int i = length;
+    auto i = length;
     if (candidates[0][i] == '\0') {
         putchar(' ');
-        packet.put(' ');
+        input.put(' ');
     } else {
         for (;; i++) {
             char c = candidates[0][i];
             if (c == '\0') break;
             putchar(c);
-            packet.put(c);
+            input.put(c);
         }
     }
 }
-
-
-//------------------------------------------------------------------------------

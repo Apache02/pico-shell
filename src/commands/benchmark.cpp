@@ -48,7 +48,7 @@ static void print_bench_tbl_row(const char *type, size_t count, uint64_t duratio
     printf(tbl_header, type, s_count, s_duration, s_flops);
 }
 
-void command_benchmark(Console &c) {
+int command_benchmark(int, const char *[]) {
     print_bench_tbl_header();
 
     static struct {
@@ -90,4 +90,6 @@ void command_benchmark(Console &c) {
 
     printf(tbl_divider);
     printf("\n");
+
+    return 0;
 }

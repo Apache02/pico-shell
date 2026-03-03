@@ -10,6 +10,6 @@ target_include_directories(
 target_sources(
         shell_main INTERFACE
         Console.cpp
-        Packet.cpp
+        Parser.cpp
         History.cpp
 )

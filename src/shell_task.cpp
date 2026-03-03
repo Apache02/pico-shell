@@ -5,6 +5,7 @@
 #include "usb_itf.h"
 #include "usb_task.h"
 #include "shell/Console.h"
+#include "shell/console_colors.h"
 
 
 extern const Console::Handler handlers[];
@@ -23,7 +24,7 @@ static void print_welcome() {
 }
 
 void vTaskShell(__unused void *pvParams) {
-    Console *console = new Console(handlers);
+    auto *console = new Console(handlers);
 
     for (;;) {
         wait_usb();

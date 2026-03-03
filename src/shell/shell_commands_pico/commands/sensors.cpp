@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "hardware/adc.h"
 
-void command_sensors(Console &c) {
+int command_sensors(int, const char *[]) {
     adc_init();
     adc_set_temp_sensor_enabled(true);
     adc_select_input(4);
@@ -15,4 +15,6 @@ void command_sensors(Console &c) {
     float tempC = 27.0f - (adc - 0.706f) / 0.001721f;
 
     printf("Onboard temperature: %+.01f °C\n", tempC);
+
+    return 0;
 }

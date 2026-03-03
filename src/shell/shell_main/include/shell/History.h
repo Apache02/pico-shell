@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stddef.h>
 #include <stdint.h>
 
 
@@ -17,6 +16,8 @@ public:
     ~History();
 
     void add(const char *token);
+
+    void add(int argc, const char *argv[]);
 
     const char *prev();
 

@@ -1,29 +1,41 @@
 #pragma once
 
-#include "Packet.h"
+#include "Input.h"
 #include "History.h"
-#include "console_colors.h"
+#include <stdint.h>
 
 
-struct Console {
+class Console {
 public:
-    typedef void (HandlerFunction)(Console &);
+    typedef int (CommandHandlerFunction)(int argc, const char *argv[]);
 
     struct Handler {
         const char *const name;
-        HandlerFunction *const handler;
+        CommandHandlerFunction *const handler;
     };
 
 private:
-    char control_buf[16];
-    size_t control_pos = 0;
+    struct ControlSequence {
+        enum {
+            NO_SEQUENCE,
+            IN_SEQUENCE,
+            END_SEQUENCE,
+        };
+
+        char buffer[16] = {0};
+        size_t position = 0;
+
+        int detect(int c);
+    } control_sequence;
+
     size_t autocomplete_streak = 0;
 
     History *history = nullptr;
     const Handler *handlers = nullptr;
 
+    Input input;
+
 public:
-    Packet packet;
 
     Console(const Handler *handlers);
 
@@ -33,8 +45,6 @@ public:
 
     void start();
 
-    void print_eol();
-
     void update(int c);
 
     void replace_command(const char *command);
@@ -43,7 +53,7 @@ public:
 
     void handle_control_sequence(const char *control);
 
-    bool dispatch_command();
+    int handle_input();
 
     void autocomplete();
 };

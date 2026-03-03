@@ -32,7 +32,7 @@ static void sprint_human_hz(char *buf, uint32_t hz) {
     }
 }
 
-void command_clocks(Console &c) {
+int command_clocks(int, const char *[]) {
     char freq_human[32];
 
 #ifdef configCPU_CLOCK_HZ
@@ -46,5 +46,7 @@ void command_clocks(Console &c) {
         sprint_human_hz(freq_human, clock_hz);
         printf("%12s | %s\n", freq_human, item.description);
     }
+
+    return 0;
 }
 

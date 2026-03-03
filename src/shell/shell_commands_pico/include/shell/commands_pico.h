@@ -1,9 +1,7 @@
 #pragma once
 
-#include "shell/Console.h"
+int command_clocks(int, const char *[]);
 
-void command_clocks(Console &c);
+int command_sensors(int, const char *[]);
 
-void command_sensors(Console &c);
-
-void command_i2c_scan(Console &c);
+int command_i2c_scan(int, const char *[]);
