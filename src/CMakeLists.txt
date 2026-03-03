@@ -4,7 +4,7 @@ add_subdirectory(shell)
 add_subdirectory(commands)
 
 add_executable(
-        pico-console
+        pico-shell
         main.cpp
         usb/usb_descriptors.c
         usb/usb_task.cpp
@@ -12,7 +12,7 @@ add_executable(
         handlers.cpp
 )
 
-pico_add_extra_outputs(pico-console)
+pico_add_extra_outputs(pico-shell)
 
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/config
@@ -20,7 +20,7 @@ include_directories(
 )
 
 target_link_libraries(
-        pico-console
+        pico-shell
         pico_stdlib
         pico_stdio_usb
         pico_unique_id
@@ -33,4 +33,4 @@ target_link_libraries(
         commands
 )
 
-add_deploy_target(pico-console "${CMAKE_CURRENT_BINARY_DIR}/pico-console.uf2")
+add_deploy_target(pico-shell "${CMAKE_CURRENT_BINARY_DIR}/pico-shell.uf2")
