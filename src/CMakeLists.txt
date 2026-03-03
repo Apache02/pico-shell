@@ -29,6 +29,7 @@ target_link_libraries(
         shell_main
         shell_commands_common
         shell_commands_pico
+        shell_commands_freertos
         commands
 )
 

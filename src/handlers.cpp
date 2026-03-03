@@ -1,6 +1,7 @@
 #include "shell/Shell.h"
 #include "shell/commands_common.h"
 #include "shell/commands_pico.h"
+#include "shell/commands_freertos.h"
 #include "commands/commands.h"
 #include <stdio.h>
 
@@ -20,6 +21,7 @@ const Shell::Handler handlers[] = {
     {"board_help", command_board_help},
     {"chip_id", command_chip_id},
     {"bench", command_benchmark},
+    {"tasks", command_tasks},
     // required at the end
     {nullptr, nullptr},
 };

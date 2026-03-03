@@ -1,3 +1,4 @@
 add_subdirectory(shell_main)
 add_subdirectory(shell_commands_common)
 add_subdirectory(shell_commands_pico)
+add_subdirectory(shell_commands_freertos)
