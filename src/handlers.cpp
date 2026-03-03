@@ -1,4 +1,4 @@
-#include "shell/Console.h"
+#include "shell/Shell.h"
 #include "shell/commands_common.h"
 #include "shell/commands_pico.h"
 #include "commands/commands.h"
@@ -7,9 +7,9 @@
 
 static int help(int, const char *[]);
 
-extern const Console::Handler handlers[];
+extern const Shell::Handler handlers[];
 
-const Console::Handler handlers[] = {
+const Shell::Handler handlers[] = {
     {"help", help},
     {"echo", command_echo},
     {"dump", command_dump},

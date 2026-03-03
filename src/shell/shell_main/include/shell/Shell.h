@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 
-class Console {
+class Shell {
 public:
     typedef int (CommandHandlerFunction)(int argc, const char *argv[]);
 
@@ -37,9 +37,9 @@ private:
 
 public:
 
-    Console(const Handler *handlers);
+    Shell(const Handler *handlers);
 
-    ~Console();
+    ~Shell();
 
     void reset();
 

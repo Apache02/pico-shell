@@ -1,4 +1,4 @@
-#include "shell/Console.h"
+#include "shell/Shell.h"
 #include "shell/console_colors.h"
 #include <stdio.h>
 #include <string.h>
@@ -23,27 +23,27 @@ static void print_eol() {
     printf("\r\n");
 }
 
-Console::Console(const Handler *handlers) : handlers(handlers) {
+Shell::Shell(const Handler *handlers) : handlers(handlers) {
     history = new History(8);
     control_sequence.position = 0;
     control_sequence.buffer[0] = 0;
 }
 
-Console::~Console() {
+Shell::~Shell() {
     if (history) {
         delete history;
         history = nullptr;
     }
 }
 
-void Console::reset() {
+void Shell::reset() {
 }
 
-void Console::start() {
+void Shell::start() {
     printf("%s ", ">");
 }
 
-int Console::handle_input() {
+int Shell::handle_input() {
     static const char *argv[32];
     int argc = 0;
 
@@ -87,7 +87,7 @@ int Console::handle_input() {
 
 //------------------------------------------------------------------------------
 
-void Console::update(int c) {
+void Shell::update(int c) {
     if (is_control_sequence(c)) return;
 
     if (c == '\t') {
@@ -141,7 +141,7 @@ void Console::update(int c) {
     input.put(c);
 }
 
-int Console::ControlSequence::detect(int c) {
+int Shell::ControlSequence::detect(int c) {
     if (c == '\x1B') {
         // this is the beginning of control sequence
         position = 0;
@@ -188,7 +188,7 @@ int Console::ControlSequence::detect(int c) {
     return NO_SEQUENCE;
 }
 
-bool Console::is_control_sequence(int c) {
+bool Shell::is_control_sequence(int c) {
     switch (control_sequence.detect(c)) {
         case ControlSequence::END_SEQUENCE:
             handle_control_sequence(control_sequence.buffer);
@@ -199,7 +199,7 @@ bool Console::is_control_sequence(int c) {
     }
 }
 
-void Console::handle_control_sequence(const char *control) {
+void Shell::handle_control_sequence(const char *control) {
     if (strcmp(control, CONTROL_ARROW_UP) == 0) {
         this->replace_command(history->prev());
     } else if (strcmp(control, CONTROL_ARROW_DOWN) == 0) {
@@ -229,7 +229,7 @@ void Console::handle_control_sequence(const char *control) {
     }
 }
 
-void Console::replace_command(const char *command) {
+void Shell::replace_command(const char *command) {
     size_t length = strlen(input.buffer);
     putchar('\r');
     for (size_t i = 0; i < length + 4; i++) {
@@ -256,7 +256,7 @@ static unsigned int prefix_match(const char *s1, const char *s2) {
     return i;
 }
 
-void Console::autocomplete() {
+void Shell::autocomplete() {
     size_t length = strlen(input.buffer);
     if (length == 0 || input.buffer[length - 1] == ' ') {
         return;
