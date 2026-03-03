@@ -1,5 +1,3 @@
-#include "commands.h"
-
 #include <stdio.h>
 #include "hardware/structs/sysinfo.h"
 #include "hardware/flash.h"

@@ -9,7 +9,6 @@ target_sources(
 
 target_link_libraries(
         commands INTERFACE
-        pico_unique_id
         hardware_clocks
         hardware_adc
         hardware_i2c
