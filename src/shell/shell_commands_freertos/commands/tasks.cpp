@@ -34,7 +34,7 @@ const StackType_t *xCalcHighWaterMark(const StackType_t *pxStack) {
 int command_tasks(int argc, const char *argv[]) {
 #if configUSE_TRACE_FACILITY == 1
     uint32_t uxArraySize = uxTaskGetNumberOfTasks();
-    size_t xTasksBufferSize = (sizeof(TaskStatus_t) * uxArraySize);
+    size_t xTasksBufferSize = (sizeof(TaskStatus_t) * (uxArraySize + 5));
     auto *pxTasksBuffer = static_cast<TaskStatus_t *>(pvPortMalloc(xTasksBufferSize));
 
     if (!pxTasksBuffer) {
