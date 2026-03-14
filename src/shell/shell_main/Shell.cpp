@@ -93,13 +93,10 @@ void Shell::update(int c) {
     if (is_control_sequence(c)) return;
 
     if (c == '\t') {
-        if (autocomplete_streak < 2) {
-            this->autocomplete();
-            autocomplete_streak++;
-        }
+        this->autocomplete();
+        autocomplete_streak++;
         return;
     }
-
     autocomplete_streak = 0;
 
     if (c == '\r') c = '\n';
@@ -284,48 +281,47 @@ void Shell::autocomplete() {
 
     if (found_count == 0) return;
 
-    if (found_count > 1) {
-        // print candidates
-        putchar('\r');
-        for (size_t i = 0; i < found_count && i < count_of(candidates); i++) {
-            if (i > 0 && (i & 0b11) == 0b11) {
-                printf(EOL);
-            }
-            printf("%-16s", candidates[i]);
-        }
-        printf(EOL);
-
-        // find how many common symbols
-        int common_count = 0;
-        for (;; common_count++) {
-            for (size_t i = 1; i < found_count; i++) {
-                if (candidates[0][common_count] != candidates[i][common_count]) {
-                    goto break_2;
-                }
+    if (found_count == 1) {
+        const char *name = candidates[0];
+        if (name[length] == '\0') {
+            putchar(' ');
+            input->put(' ');
+        } else {
+            for (size_t i = length; name[i] != '\0'; i++) {
+                putchar(name[i]);
+                input->put(name[i]);
             }
         }
-    break_2:
-
-        input->reset();
-        input->put_strn(candidates[0], common_count);
-        this->start();
-        printf("%s", input->buffer);
-
         return;
     }
 
-    // found_count == 1
-
-    auto i = length;
-    if (candidates[0][i] == '\0') {
-        putchar(' ');
-        input->put(' ');
-    } else {
-        for (;; i++) {
-            char c = candidates[0][i];
-            if (c == '\0') break;
-            putchar(c);
-            input->put(c);
+    // found_count > 1
+    size_t common = 0;
+    for (;; common++) {
+        for (size_t i = 1; i < found_count; i++) {
+            if (candidates[0][common] != candidates[i][common]) goto break_2;
         }
     }
+break_2:
+
+    if (common > length) {
+        for (size_t i = length; i < common; i++) {
+            putchar(candidates[0][i]);
+            input->put(candidates[0][i]);
+        }
+        autocomplete_streak = 0;
+        return;
+    }
+
+    if (autocomplete_streak > 1) return;
+
+    printf(EOL);
+    for (size_t i = 0; i < found_count && i < count_of(candidates); i++) {
+        if (i > 0 && (i % 4) == 0) printf(EOL);
+        printf("%-16s", candidates[i]);
+    }
+    printf(EOL);
+
+    this->start();
+    printf("%s", input->buffer);
 }
