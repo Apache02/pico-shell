@@ -46,6 +46,8 @@ public:
 
     void update(int c);
 
+    void clear_line();
+
     void replace_command(const char *command);
 
     bool is_control_sequence(int c);

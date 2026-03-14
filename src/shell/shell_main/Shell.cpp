@@ -43,12 +43,15 @@ void Shell::reset() {
 }
 
 void Shell::start() {
-    printf("\r\x1B[2K\r");
     printf("%s ", ">");
 }
 
+void Shell::clear_line() {
+    printf("\r\x1B[2K\r");
+}
+
 int Shell::handle_input() {
-    static const char *argv[32];
+    const char *argv[32];
     int argc = 0;
 
     char *ptr = input->buffer;
@@ -115,8 +118,7 @@ void Shell::update(int c) {
 
     if (c == '\x03' || c == '\x04') {
         // Ctrl + C | Ctrl + D
-        printf(EOL);
-
+        this->clear_line();
         this->reset();
         this->start();
 
@@ -231,6 +233,10 @@ void Shell::handle_control_sequence(const char *control) {
             input->set_offset(input->size);
         }
     } else if (strcmp(control, CONTROL_DELETE) == 0) {
+        if (input->remove_right()) {
+            int tail = input->size - input->get_offset();
+            printf("%s \x1B[%dD", input->cursor, tail + 1);
+        }
     } else {
         putchar('\r');
         printf("Unhandled control sequence [" COLOR_YELLOW("\\x%02X%s") "]", control[0], &control[1]);
@@ -239,7 +245,7 @@ void Shell::handle_control_sequence(const char *control) {
 }
 
 void Shell::replace_command(const char *command) {
-    printf("\r\x1B[2K\r");
+    this->clear_line();
     this->start();
 
     if (command) {

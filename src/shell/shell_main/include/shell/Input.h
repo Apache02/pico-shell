@@ -2,10 +2,13 @@
 
 #include <string.h>
 
+#ifndef SHELL_INPUT_BUFFER_SIZE
+#define SHELL_INPUT_BUFFER_SIZE 2048
+#endif
 
 struct Input {
     unsigned int sentinel1 = 0xDEADBEEF;
-    char buffer[16384]{};
+    char buffer[SHELL_INPUT_BUFFER_SIZE]{};
     unsigned int sentinel2 = 0xF00DCAFE;
     int size = 0;
     bool error = false;
