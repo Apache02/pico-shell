@@ -33,10 +33,9 @@ private:
     History *history = nullptr;
     const Handler *handlers = nullptr;
 
-    Input input;
+    Input *input;
 
 public:
-
     Shell(const Handler *handlers);
 
     ~Shell();

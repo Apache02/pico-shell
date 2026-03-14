@@ -24,6 +24,7 @@
 
 Shell::Shell(const Handler *handlers) : handlers(handlers) {
     history = new History(8);
+    input = new Input();
     control_sequence.position = 0;
     control_sequence.buffer[0] = 0;
 }
@@ -33,6 +34,8 @@ Shell::~Shell() {
         delete history;
         history = nullptr;
     }
+    delete input;
+    input = nullptr;
 }
 
 void Shell::reset() {
@@ -46,8 +49,8 @@ int Shell::handle_input() {
     static const char *argv[32];
     int argc = 0;
 
-    char *ptr = input.buffer;
-    char *end = input.buffer + input.size;
+    char *ptr = input->buffer;
+    char *end = input->buffer + input->size;
 
     while (ptr < end && argc < count_of(argv) - 1) {
         while (ptr < end && *ptr == ' ') ptr++;
@@ -103,9 +106,9 @@ void Shell::update(int c) {
 
     if (c == '\x7F') {
         // backspace
-        if (input.cursor > input.buffer) {
+        if (input->cursor > input->buffer) {
             printf("\b \b");
-            input.remove_left();
+            input->remove_left();
         }
 
         return;
@@ -115,29 +118,29 @@ void Shell::update(int c) {
         // Ctrl + C | Ctrl + D
         printf(EOL);
 
-        input.reset();
+        input->reset();
         this->start();
 
         return;
     }
 
     if (c == '\n') {
-        input.end();
+        input->end();
 
         printf(EOL);
 
-        if (!input.is_empty()) {
+        if (!input->is_empty()) {
             int status = handle_input();
         }
 
-        input.reset();
+        input->reset();
         this->start();
 
         return;
     }
 
     putchar(c);
-    input.put(c);
+    input->put(c);
 }
 
 int Shell::ControlSequence::detect(int c) {
@@ -204,21 +207,21 @@ void Shell::handle_control_sequence(const char *control) {
     } else if (strcmp(control, CONTROL_ARROW_DOWN) == 0) {
         this->replace_command(history->next());
     } else if (strcmp(control, CONTROL_ARROW_LEFT) == 0) {
-        if (input.cursor_left()) {
+        if (input->cursor_left()) {
             printf(CONTROL_ARROW_LEFT);
         }
     } else if (strcmp(control, CONTROL_ARROW_RIGHT) == 0) {
-        if (input.cursor_right()) {
+        if (input->cursor_right()) {
             printf(CONTROL_ARROW_RIGHT);
         }
     } else if (strcmp(control, CONTROL_PAGE_UP) == 0) {
     } else if (strcmp(control, CONTROL_PAGE_DOWN) == 0) {
     } else if (strcmp(control, CONTROL_HOME) == 0 || strcmp(control, CONTROL_HOME_ALT) == 0) {
-        int length = input.get_offset();
+        int length = input->get_offset();
         for (int i = 0; i < length; i++) {
             printf(CONTROL_ARROW_LEFT);
         }
-        input.set_offset(0);
+        input->set_offset(0);
     } else if (strcmp(control, CONTROL_END) == 0 || strcmp(control, CONTROL_END_ALT) == 0) {
     } else if (strcmp(control, CONTROL_DELETE) == 0) {
     } else {
@@ -229,7 +232,7 @@ void Shell::handle_control_sequence(const char *control) {
 }
 
 void Shell::replace_command(const char *command) {
-    size_t length = strlen(input.buffer);
+    size_t length = strlen(input->buffer);
     putchar('\r');
     for (size_t i = 0; i < length + 4; i++) {
         putchar(' ');
@@ -239,9 +242,9 @@ void Shell::replace_command(const char *command) {
 
     if (command) {
         printf("%s", command);
-        input.set(command);
+        input->set(command);
     } else {
-        input.reset();
+        input->reset();
     }
 }
 
@@ -256,8 +259,8 @@ static unsigned int prefix_match(const char *s1, const char *s2) {
 }
 
 void Shell::autocomplete() {
-    size_t length = strlen(input.buffer);
-    if (length == 0 || input.buffer[length - 1] == ' ') {
+    size_t length = strlen(input->buffer);
+    if (length == 0 || input->buffer[length - 1] == ' ') {
         return;
     }
 
@@ -267,7 +270,7 @@ void Shell::autocomplete() {
     for (int i = 0;; i++) {
         if (!handlers[i].name || !handlers[i].handler) break;
 
-        size_t match_count = prefix_match(input.buffer, handlers[i].name);
+        size_t match_count = prefix_match(input->buffer, handlers[i].name);
         if (match_count < length) {
             continue;
         }
@@ -303,10 +306,10 @@ void Shell::autocomplete() {
         }
     break_2:
 
-        input.reset();
-        input.put_strn(candidates[0], common_count);
+        input->reset();
+        input->put_strn(candidates[0], common_count);
         this->start();
-        printf("%s", input.buffer);
+        printf("%s", input->buffer);
 
         return;
     }
@@ -316,13 +319,13 @@ void Shell::autocomplete() {
     auto i = length;
     if (candidates[0][i] == '\0') {
         putchar(' ');
-        input.put(' ');
+        input->put(' ');
     } else {
         for (;; i++) {
             char c = candidates[0][i];
             if (c == '\0') break;
             putchar(c);
-            input.put(c);
+            input->put(c);
         }
     }
 }
