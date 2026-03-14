@@ -19,9 +19,8 @@
 #define CONTROL_PAGE_DOWN       "\x1B[6~"
 #define CONTROL_DELETE          "\x1B[3~"
 
-static void print_eol() {
-    printf("\r\n");
-}
+#define EOL                     "\r\n"
+
 
 Shell::Shell(const Handler *handlers) : handlers(handlers) {
     history = new History(8);
@@ -114,7 +113,7 @@ void Shell::update(int c) {
 
     if (c == '\x03' || c == '\x04') {
         // Ctrl + C | Ctrl + D
-        print_eol();
+        printf(EOL);
 
         input.reset();
         this->start();
@@ -125,7 +124,7 @@ void Shell::update(int c) {
     if (c == '\n') {
         input.end();
 
-        print_eol();
+        printf(EOL);
 
         if (!input.is_empty()) {
             int status = handle_input();
@@ -225,7 +224,7 @@ void Shell::handle_control_sequence(const char *control) {
     } else {
         putchar('\r');
         printf("Unhandled control sequence [" COLOR_YELLOW("\\x%02X%s") "]", control[0], &control[1]);
-        print_eol();
+        printf(EOL);
     }
 }
 
@@ -287,11 +286,11 @@ void Shell::autocomplete() {
         putchar('\r');
         for (size_t i = 0; i < found_count && i < count_of(candidates); i++) {
             if (i > 0 && (i & 0b11) == 0b11) {
-                print_eol();
+                printf(EOL);
             }
             printf("%-16s", candidates[i]);
         }
-        print_eol();
+        printf(EOL);
 
         // find how many common symbols
         int common_count = 0;
