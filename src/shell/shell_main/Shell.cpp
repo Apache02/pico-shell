@@ -219,12 +219,17 @@ void Shell::handle_control_sequence(const char *control) {
     } else if (strcmp(control, CONTROL_PAGE_UP) == 0) {
     } else if (strcmp(control, CONTROL_PAGE_DOWN) == 0) {
     } else if (strcmp(control, CONTROL_HOME) == 0 || strcmp(control, CONTROL_HOME_ALT) == 0) {
-        int length = input->get_offset();
-        for (int i = 0; i < length; i++) {
-            printf(CONTROL_ARROW_LEFT);
+        int steps = input->get_offset();
+        if (steps > 0) {
+            printf("\x1B[%dD", steps);
+            input->set_offset(0);
         }
-        input->set_offset(0);
     } else if (strcmp(control, CONTROL_END) == 0 || strcmp(control, CONTROL_END_ALT) == 0) {
+        int steps = input->size - input->get_offset();
+        if (steps > 0) {
+            printf("\x1B[%dC", steps);
+            input->set_offset(input->size);
+        }
     } else if (strcmp(control, CONTROL_DELETE) == 0) {
     } else {
         putchar('\r');
