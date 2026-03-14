@@ -2,7 +2,6 @@
 
 #include "Input.h"
 #include "History.h"
-#include <stdint.h>
 
 
 class Shell {
@@ -12,6 +11,7 @@ public:
     struct Handler {
         const char *const name;
         CommandHandlerFunction *const handler;
+        const char *const description;
     };
 
 private:
