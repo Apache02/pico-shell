@@ -30,9 +30,13 @@ struct Input {
     void put(char c) {
         if (size >= sizeof(buffer) - 1) {
             error = true;
+            return;
         }
         *cursor++ = c;
         size++;
+        if (!check_integrity()) {
+            error = true;
+        }
     }
 
     void end() {

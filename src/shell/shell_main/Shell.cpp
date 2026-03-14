@@ -141,7 +141,7 @@ void Shell::update(int c) {
     putchar(c);
     input->put(c);
 
-    if (!input->check_integrity()) {
+    if (input->error) {
         this->reset();
         this->start();
     }
