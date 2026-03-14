@@ -39,9 +39,11 @@ Shell::~Shell() {
 }
 
 void Shell::reset() {
+    input->reset();
 }
 
 void Shell::start() {
+    printf("\r\x1B[2K\r");
     printf("%s ", ">");
 }
 
@@ -115,22 +117,20 @@ void Shell::update(int c) {
         // Ctrl + C | Ctrl + D
         printf(EOL);
 
-        input->reset();
+        this->reset();
         this->start();
 
         return;
     }
 
     if (c == '\n') {
-        input->end();
-
         printf(EOL);
 
         if (!input->is_empty()) {
             int status = handle_input();
         }
 
-        input->reset();
+        this->reset();
         this->start();
 
         return;
@@ -138,6 +138,11 @@ void Shell::update(int c) {
 
     putchar(c);
     input->put(c);
+
+    if (!input->check_integrity()) {
+        this->reset();
+        this->start();
+    }
 }
 
 int Shell::ControlSequence::detect(int c) {
@@ -229,12 +234,7 @@ void Shell::handle_control_sequence(const char *control) {
 }
 
 void Shell::replace_command(const char *command) {
-    size_t length = strlen(input->buffer);
-    putchar('\r');
-    for (size_t i = 0; i < length + 4; i++) {
-        putchar(' ');
-    }
-    putchar('\r');
+    printf("\r\x1B[2K\r");
     this->start();
 
     if (command) {
@@ -256,7 +256,7 @@ static unsigned int prefix_match(const char *s1, const char *s2) {
 }
 
 void Shell::autocomplete() {
-    size_t length = strlen(input->buffer);
+    size_t length = input->get_offset();
     if (length == 0 || input->buffer[length - 1] == ' ') {
         return;
     }
@@ -282,15 +282,12 @@ void Shell::autocomplete() {
     if (found_count == 0) return;
 
     if (found_count == 1) {
-        const char *name = candidates[0];
-        if (name[length] == '\0') {
+        const char *command = candidates[0];
+        if (command[length] == '\0') {
             putchar(' ');
             input->put(' ');
         } else {
-            for (size_t i = length; name[i] != '\0'; i++) {
-                putchar(name[i]);
-                input->put(name[i]);
-            }
+            replace_command(command);
         }
         return;
     }

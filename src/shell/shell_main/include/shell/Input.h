@@ -4,9 +4,9 @@
 
 
 struct Input {
-    int sentinel1 = 0xDEADBEEF;
+    unsigned int sentinel1 = 0xDEADBEEF;
     char buffer[16384]{};
-    int sentinel2 = 0xF00DCAFE;
+    unsigned int sentinel2 = 0xF00DCAFE;
     int size = 0;
     bool error = false;
     char *cursor = buffer;
@@ -16,6 +16,12 @@ struct Input {
         size = 0;
         error = false;
         cursor = buffer;
+        sentinel1 = 0xDEADBEEF;
+        sentinel2 = 0xF00DCAFE;
+    }
+
+    bool check_integrity() {
+        return sentinel1 == 0xDEADBEEF && sentinel2 == 0xF00DCAFE;
     }
 
     void put(char c) {
