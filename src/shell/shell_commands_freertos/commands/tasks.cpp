@@ -16,8 +16,8 @@ static const char *const TASK_STATE_LABEL_MAP[] = {
     [eTaskState::eInvalid] = "invalid",
 };
 
-static const char *get_task_state_label(int state) {
-    return state >= 0 && state < count_of(TASK_STATE_LABEL_MAP)
+static const char *get_task_state_label(unsigned int state) {
+    return state < count_of(TASK_STATE_LABEL_MAP)
                ? TASK_STATE_LABEL_MAP[state]
                : "?";
 }

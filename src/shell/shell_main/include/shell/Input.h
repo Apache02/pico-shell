@@ -28,7 +28,7 @@ struct Input {
     }
 
     void put(char c) {
-        if (size >= sizeof(buffer) - 1) {
+        if (size >= static_cast<int>(sizeof(buffer) - 1)) {
             error = true;
             return;
         }

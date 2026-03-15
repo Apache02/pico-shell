@@ -57,7 +57,7 @@ int Shell::handle_input() {
     char *ptr = input->buffer;
     char *end = input->buffer + input->size;
 
-    while (ptr < end && argc < count_of(argv) - 1) {
+    while (ptr < end && argc < static_cast<int>(count_of(argv) - 1)) {
         while (ptr < end && *ptr == ' ') ptr++;
         if (ptr >= end) break;
 
@@ -129,7 +129,7 @@ void Shell::update(int c) {
         printf(EOL);
 
         if (!input->is_empty()) {
-            int status = handle_input();
+            __unused int status = handle_input();
         }
 
         this->reset();

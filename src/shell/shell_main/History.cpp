@@ -3,7 +3,7 @@
 #include <string.h>
 
 
-History::History(int8_t depth) : depth(depth < 0 ? 0 : depth), size(0), index(-1), tokens(nullptr) {
+History::History(int8_t depth) : depth(depth < 0 ? 0 : depth), index(-1), size(0), tokens(nullptr) {
     if (depth > 0) {
         tokens = new char *[depth];
         for (uint8_t i = 0; i < depth; i++) {
