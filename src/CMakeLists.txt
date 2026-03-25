@@ -2,6 +2,7 @@ pico_sdk_init()
 
 add_subdirectory(shell)
 add_subdirectory(commands)
+add_subdirectory(utils)
 
 add_executable(
         pico-shell
