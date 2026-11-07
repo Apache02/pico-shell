@@ -76,6 +76,7 @@
 #define configGENERATE_RUN_TIME_STATS           0
 #define configUSE_TRACE_FACILITY                1
 #define configUSE_STATS_FORMATTING_FUNCTIONS    0
+#define configRECORD_STACK_HIGH_ADDRESS         1           // lets the tasks command report stack size and usage
 
 /* Co-routine related definitions. */
 #define configUSE_CO_ROUTINES                   0

@@ -108,9 +108,12 @@ void Shell::update(int c) {
 
     if (c == '\x7F') {
         // backspace
-        if (input->cursor > input->buffer) {
-            printf("\b \b");
-            input->remove_left();
+        if (input->remove_left()) {
+            // Step back, reprint the tail the delete pulled left, blank the
+            // column it vacated, then walk back onto the cursor. With the
+            // cursor at the end this is the plain "\b \b".
+            int tail = input->size - input->get_offset();
+            printf("\b%s \x1B[%dD", input->cursor, tail + 1);
         }
 
         return;
@@ -138,13 +141,19 @@ void Shell::update(int c) {
         return;
     }
 
-    putchar(c);
     input->put(c);
 
     if (input->error) {
         this->reset();
         this->start();
+        return;
     }
+
+    putchar(c);
+
+    // Reprint what the insert pushed right, then walk back onto the cursor.
+    int tail = input->size - input->get_offset();
+    if (tail > 0) printf("%s\x1B[%dD", input->cursor, tail);
 }
 
 int Shell::ControlSequence::detect(int c) {
@@ -169,22 +178,18 @@ int Shell::ControlSequence::detect(int c) {
     }
 
     if (position > 1) {
-        buffer[position++] = c;
-
-        if (c >= 'A' && c <= 'Z') {
-            // end of control sequence
-            buffer[position] = 0;
+        if (position >= count_of(buffer) - 1) {
             position = 0;
-        } else if (c == '~') {
-            // end of control sequence [F1-F12]
-            buffer[position] = 0;
-            position = 0;
-        } else if (position >= count_of(buffer)) {
-            // buffer overflow
-            position = 0;
+            return IN_SEQUENCE;
         }
 
-        if (position == 0) {
+        buffer[position++] = c;
+
+        // A letter ends a cursor or editing sequence, '~' the F-key and
+        // Home/End forms.
+        if ((c >= 'A' && c <= 'Z') || c == '~') {
+            buffer[position] = 0;
+            position = 0;
             return END_SEQUENCE;
         }
 
@@ -207,9 +212,9 @@ bool Shell::is_control_sequence(int c) {
 
 void Shell::handle_control_sequence(const char *control) {
     if (strcmp(control, CONTROL_ARROW_UP) == 0) {
-        this->replace_command(history->prev());
+        if (history) this->replace_command(history->prev());
     } else if (strcmp(control, CONTROL_ARROW_DOWN) == 0) {
-        this->replace_command(history->next());
+        if (history) this->replace_command(history->next());
     } else if (strcmp(control, CONTROL_ARROW_LEFT) == 0) {
         if (input->cursor_left()) {
             printf(CONTROL_ARROW_LEFT);
@@ -275,7 +280,7 @@ void Shell::autocomplete() {
     const char *candidates[16] = {nullptr};
 
     size_t found_count = 0;
-    for (int i = 0;; i++) {
+    for (int i = 0; found_count < count_of(candidates); i++) {
         if (!handlers[i].name || !handlers[i].handler) break;
 
         size_t match_count = prefix_match(input->buffer, handlers[i].name);
@@ -283,11 +288,7 @@ void Shell::autocomplete() {
             continue;
         }
 
-        if (found_count < count_of(candidates)) {
-            candidates[found_count] = handlers[i].name;
-        }
-
-        found_count++;
+        candidates[found_count++] = handlers[i].name;
     }
 
     if (found_count == 0) return;
@@ -306,8 +307,13 @@ void Shell::autocomplete() {
     // found_count > 1
     size_t common = 0;
     for (;; common++) {
+        // Two entries spelled the same never diverge, so without this the walk
+        // runs past the end of both.
+        char ch = candidates[0][common];
+        if (ch == '\0') break;
+
         for (size_t i = 1; i < found_count; i++) {
-            if (candidates[0][common] != candidates[i][common]) goto break_2;
+            if (candidates[i][common] != ch) goto break_2;
         }
     }
 break_2:
@@ -324,7 +330,7 @@ break_2:
     if (autocomplete_streak > 1) return;
 
     printf(EOL);
-    for (size_t i = 0; i < found_count && i < count_of(candidates); i++) {
+    for (size_t i = 0; i < found_count; i++) {
         if (i > 0 && (i % 4) == 0) printf(EOL);
         printf("%-16s", candidates[i]);
     }
